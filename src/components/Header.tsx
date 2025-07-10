@@ -57,9 +57,6 @@ function Header() {
                     {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-xs">{user?.email}</p>
-                  <p className="text-xs text-quiz-primary font-medium">
-                    {user?.roleName}
-                  </p>
                 </div>
                 
                 <Link
