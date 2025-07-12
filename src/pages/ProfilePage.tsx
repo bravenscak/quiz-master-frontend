@@ -4,9 +4,11 @@ import Button from "../components/Button";
 import { useAuth } from "../contexts/AuthContext";
 import { TeamService, Team } from "../services/teamService";
 import EditTeamModal from "../components/EditTeamModal";
+import EditProfileModal from "../components/EditProfileModal";
+import { UserResponse } from "../types/auth";
 
 function ProfilePage() {
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, updateUser } = useAuth();
     const navigate = useNavigate();
 
     const [myTeams, setMyTeams] = useState<Team[]>([]);
@@ -22,6 +24,8 @@ function ProfilePage() {
         team: null,
         maxParticipants: 1,
     });
+
+    const [editProfileModal, setEditProfileModal] = useState(false);
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
@@ -73,6 +77,11 @@ function ProfilePage() {
     const handleEditSuccess = () => {
         fetchMyTeams();
         setEditTeamModal((prev) => ({ ...prev, isOpen: false }));
+    };
+
+    const handleProfileEditSuccess = (updatedUser: UserResponse) => {
+        updateUser(updatedUser);
+        setEditProfileModal(false);
     };
 
     const now = new Date();
@@ -182,7 +191,7 @@ function ProfilePage() {
                         <div className="mt-6">
                             <Button
                                 text="📝 Uredi profil"
-                                onClick={() => alert("TODO: Edit profil modal")}
+                                onClick={() => setEditProfileModal(true)}
                                 variant="primary"
                             />
                         </div>
@@ -368,6 +377,14 @@ function ProfilePage() {
                 maxParticipantsPerTeam={editTeamModal.maxParticipants}
                 onSuccess={handleEditSuccess}
             />
+            {user && (
+                <EditProfileModal
+                    isOpen={editProfileModal}
+                    onClose={() => setEditProfileModal(false)}
+                    user={user}
+                    onSuccess={handleProfileEditSuccess}
+                />
+            )}
         </main>
     );
 }
