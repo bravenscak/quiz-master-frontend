@@ -7,6 +7,7 @@ import QuizDetailsPage from './pages/QuizDetailsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OrganizatorPage from './pages/OrganizatorPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/organizer/:id" element={<OrganizatorPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </div>
       </AuthProvider>

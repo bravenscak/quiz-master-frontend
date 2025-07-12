@@ -8,6 +8,8 @@ export interface Team {
   captainName: string;
   quizName: string;
   quizDateTime: string;
+  maxParticipantsPerTeam: number; 
+  quizId: number;
 }
 
 export interface QuizTeam {
@@ -23,6 +25,11 @@ export interface CreateTeamRequest {
   name: string;
   participantCount: number;
   quizId: number;
+}
+
+export interface UpdateTeamRequest {
+  name: string;
+  participantCount: number;
 }
 
 export class TeamService {
@@ -62,6 +69,18 @@ export class TeamService {
     }
   }
 
+  static async updateTeam(teamId: number, teamData: UpdateTeamRequest): Promise<Team> {
+    try {
+      const response = await api.put<Team>(`/team/${teamId}`, teamData);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Greška pri ažuriranju tima');
+    }
+  }
+
   static async deleteTeam(teamId: number): Promise<void> {
     try {
       await api.delete(`/team/${teamId}`);
@@ -75,9 +94,9 @@ export class TeamService {
   static async getUserTeamForQuiz(quizId: number, userEmail: string): Promise<QuizTeam | null> {
     try {
       const quizTeams = await TeamService.getTeamsByQuizId(quizId);
-      
+
       const userTeam = quizTeams.find(team => team.captainEmail === userEmail);
-      
+
       return userTeam || null;
     } catch (error) {
       console.error('Greška pri provjeri registracije:', error);

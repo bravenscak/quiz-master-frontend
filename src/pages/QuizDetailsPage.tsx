@@ -6,6 +6,7 @@ import { QuizService } from "../services/quizService";
 import { TeamService, QuizTeam } from "../services/teamService";
 import { QuizDetails } from "../types/quiz";
 import { useAuth } from "../contexts/AuthContext";
+import EditTeamModal from "../components/EditTeamModal";
 
 function QuizDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -25,6 +26,14 @@ function QuizDetailsPage() {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const [registeredTeams, setRegisteredTeams] = useState<QuizTeam[]>([]);
+
+    const [editTeamModal, setEditTeamModal] = useState<{
+        isOpen: boolean;
+        team: QuizTeam | null;
+    }>({
+        isOpen: false,
+        team: null,
+    });
 
     const getActionButtonConfig = () => {
         if (!quiz) return null;
@@ -131,6 +140,22 @@ function QuizDetailsPage() {
         } finally {
             setIsDeleting(false);
         }
+    };
+
+    const handleEditTeam = () => {
+        if (userTeam && quiz) {
+            setEditTeamModal({
+                isOpen: true,
+                team: userTeam,
+            });
+        }
+    };
+
+    const handleEditTeamSuccess = async () => {
+        if (quiz) {
+            await fetchQuiz(quiz.id);
+        }
+        setEditTeamModal({ isOpen: false, team: null });
     };
 
     const handleRegistrationSuccess = async () => {
@@ -523,24 +548,12 @@ function QuizDetailsPage() {
                                                     />
                                                     <Button
                                                         text="📝 Uredi tim"
-                                                        onClick={() =>
-                                                            alert(
-                                                                "TODO: Edit tim - implementirati kasnije"
-                                                            )
-                                                        }
+                                                        onClick={handleEditTeam} // Promjena
                                                         variant="white"
                                                         className="flex-1 text-sm"
                                                     />
                                                 </div>
                                             </div>
-                                        </div>
-                                    )}
-
-                                    {isAuthenticated && (
-                                        <div className="mt-3 text-xs text-gray-400 text-center">
-                                            Korisnik: {user?.roleName}
-                                            {user?.id === quiz?.organizerId &&
-                                                " (Vlasnik)"}
                                         </div>
                                     )}
                                 </div>
@@ -558,6 +571,17 @@ function QuizDetailsPage() {
                     quizName={quiz.name}
                     maxParticipantsPerTeam={quiz.maxParticipantsPerTeam}
                     onSuccess={handleRegistrationSuccess}
+                />
+            )}
+            {quiz && (
+                <EditTeamModal
+                    isOpen={editTeamModal.isOpen}
+                    onClose={() =>
+                        setEditTeamModal({ isOpen: false, team: null })
+                    }
+                    team={editTeamModal.team}
+                    maxParticipantsPerTeam={quiz.maxParticipantsPerTeam}
+                    onSuccess={handleEditTeamSuccess}
                 />
             )}
         </main>

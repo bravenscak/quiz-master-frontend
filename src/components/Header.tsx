@@ -126,7 +126,7 @@ function Header() {
 
                   {user?.roleName === "ORGANIZER" && (
                     <Link
-                      to="/my-quizzes"
+                      to={"/organizer/" + user.id}  
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 no-underline"
                       onClick={() =>
                         setShowDropdown(false)
