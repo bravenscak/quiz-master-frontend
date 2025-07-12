@@ -1,23 +1,43 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import QuizCard from '../components/QuizCard';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
 import { QuizCardData, QuizSearchParams } from '../types/quiz';
 import { QuizService } from '../services/quizService';
+import { CategoryService, Category } from '../services/categoryService';
 import { useNavigate } from 'react-router-dom';
 
 function HomePage() {
   const navigate = useNavigate();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   
   const [quizzes, setQuizzes] = useState<QuizCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState('');
+
   const handleQuizClick = (quizId: number) => {
     navigate(`/quiz/${quizId}`);
+  };
+
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    setCategoriesError('');
+    
+    try {
+      const data = await CategoryService.getCategories();
+      setCategories(data);
+    } catch (err: any) {
+      setCategoriesError(err.message || 'Greška pri dohvaćanju kategorija');
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
   };
 
   const fetchQuizzes = async () => {
@@ -31,10 +51,9 @@ function HomePage() {
         sortDirection: 'Ascending'
       };
 
-      // TODO: Dodaj categoryId kad implementiramo kategorije
-      // if (selectedCategory) {
-      //   params.categoryId = getCategoryIdByName(selectedCategory);
-      // }
+      if (selectedCategoryId) {
+        params.categoryId = selectedCategoryId;
+      }
 
       const data = await QuizService.getQuizzes(params);
       setQuizzes(data);
@@ -48,22 +67,24 @@ function HomePage() {
   };
 
   useEffect(() => {
+    fetchCategories();
+  }, []); 
+
+  useEffect(() => {
     fetchQuizzes();
   }, []); 
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchQuizzes();
-    }, 500);
+    }, 100);
 
     return () => clearTimeout(timeoutId); 
-  }, [searchTerm, selectedCategory]);
-
-  const categories = ['Opće znanje', 'Sport', 'Film', 'Glazba', 'Tehnologija'];
+  }, [searchTerm, selectedCategoryId]);
 
   const clearFilters = () => {
     setSearchTerm('');
-    setSelectedCategory('');
+    setSelectedCategoryId(null);
   };
 
   return (
@@ -86,12 +107,13 @@ function HomePage() {
           />
           
           <CategoryFilter
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
+            selectedCategoryId={selectedCategoryId}
+            onCategoryChange={setSelectedCategoryId}
             categories={categories}
+            loading={categoriesLoading}
           />
           
-          {(searchTerm || selectedCategory) && (
+          {(searchTerm || selectedCategoryId) && (
             <button
               onClick={clearFilters}
               className="
@@ -116,6 +138,14 @@ function HomePage() {
             <span className="text-red-600">Greška: {error}</span>
           ) : (
             `Prikazuje se ${quizzes.length} kvizova`
+          )}
+          
+          {categoriesError && (
+            <div className="mt-2">
+              <span className="text-orange-600">
+                Upozorenje: {categoriesError}
+              </span>
+            </div>
           )}
         </div>
       </div>

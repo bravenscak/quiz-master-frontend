@@ -4,9 +4,17 @@ interface ButtonProps {
   text: string;
   onClick: () => void;
   variant?: 'primary' | 'secondary' | 'white';
+  disabled?: boolean;  
+  className?: string;  
 }
 
-function Button({ text, onClick, variant = 'primary' }: ButtonProps) {
+function Button({ 
+  text, 
+  onClick, 
+  variant = 'primary', 
+  disabled = false,
+  className = ''
+}: ButtonProps) {
   const getVariantClasses = () => {
     switch (variant) {
       case 'primary':
@@ -20,20 +28,28 @@ function Button({ text, onClick, variant = 'primary' }: ButtonProps) {
     }
   };
 
+  const getDisabledClasses = () => {
+    if (disabled) {
+      return 'opacity-50 cursor-not-allowed hover:transform-none';
+    }
+    return 'hover:-translate-y-0.5';
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick} 
+      disabled={disabled}
       className={`
         ${getVariantClasses()}
+        ${getDisabledClasses()}
         px-6 py-3 
         rounded-md 
         text-base 
-        cursor-pointer 
         font-bold 
         shadow-md 
         transition-all 
-        duration-200 
-        hover:-translate-y-0.5
+        duration-200
+        ${className}
       `}
     >
       {text}

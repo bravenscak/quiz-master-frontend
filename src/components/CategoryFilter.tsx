@@ -1,17 +1,28 @@
 import React from 'react';
+import { Category } from '../services/categoryService';
 
 interface CategoryFilterProps {
-  selectedCategory: string;
-  onCategoryChange: (category: string) => void;
-  categories: string[];
+  selectedCategoryId: number | null;  
+  onCategoryChange: (categoryId: number | null) => void;  
+  categories: Category[];  
+  loading?: boolean;  
 }
 
-function CategoryFilter({ selectedCategory, onCategoryChange, categories }: CategoryFilterProps) {
+function CategoryFilter({ 
+  selectedCategoryId, 
+  onCategoryChange, 
+  categories, 
+  loading = false 
+}: CategoryFilterProps) {
   return (
     <div className="relative">
       <select
-        value={selectedCategory}
-        onChange={(e) => onCategoryChange(e.target.value)}
+        value={selectedCategoryId || ''}
+        onChange={(e) => {
+          const value = e.target.value;
+          onCategoryChange(value ? parseInt(value) : null);
+        }}
+        disabled={loading}
         className="
           appearance-none
           bg-white 
@@ -27,12 +38,16 @@ function CategoryFilter({ selectedCategory, onCategoryChange, categories }: Cate
           focus:border-quiz-primary 
           focus:outline-none
           cursor-pointer
+          disabled:cursor-not-allowed
+          disabled:opacity-50
         "
       >
-        <option value="">Sve kategorije</option>
+        <option value="">
+          {loading ? 'Učitavanje...' : 'Sve kategorije'}
+        </option>
         {categories.map(category => (
-          <option key={category} value={category}>
-            {category}
+          <option key={category.id} value={category.id}>
+            {category.name}
           </option>
         ))}
       </select>

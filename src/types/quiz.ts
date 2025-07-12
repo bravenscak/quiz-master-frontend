@@ -21,6 +21,7 @@ export interface QuizDetails {
   durationMinutes?: number;
   description?: string;
   organizerName: string;
+  organizerId: number;  
   categoryName: string;
   registeredTeamsCount: number;
 }
