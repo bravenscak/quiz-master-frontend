@@ -8,6 +8,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OrganizatorPage from './pages/OrganizatorPage';
 import ProfilePage from './pages/ProfilePage';
+import CreateQuizPage from './pages/CreateQuizPage';
+import EditQuizPage from './pages/EditQuizPage';
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/organizer/:id" element={<OrganizatorPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/create-quiz" element={<CreateQuizPage />} />
+            <Route path="/edit-quiz/:id" element={<EditQuizPage />} />
           </Routes>
         </div>
       </AuthProvider>

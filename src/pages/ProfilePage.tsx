@@ -27,6 +27,8 @@ function ProfilePage() {
 
     const [editProfileModal, setEditProfileModal] = useState(false);
 
+    const isOrganizer = user?.roleName === "ORGANIZER";
+
     useEffect(() => {
         if (!loading && !isAuthenticated) {
             navigate("/login");
@@ -51,9 +53,13 @@ function ProfilePage() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            fetchMyTeams();
+            if (isOrganizer) {
+                setLoading(false);
+            } else {
+                fetchMyTeams();
+            }
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, isOrganizer]);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -198,185 +204,201 @@ function ProfilePage() {
                     </div>
                 </div>
 
-                <div>
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h3 className="text-lg font-bold mb-4">Statistike</h3>
-                        <div className="space-y-3">
-                            <div>
-                                <p className="text-sm text-gray-600">
-                                    Ukupno registracija
-                                </p>
-                                <p className="text-2xl font-bold text-quiz-primary">
-                                    {myTeams.length}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600">
-                                    Nadolazeći kvizovi
-                                </p>
-                                <p className="text-xl font-bold text-green-600">
-                                    {upcomingTeams.length}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600">
-                                    Završeni kvizovi
-                                </p>
-                                <p className="text-xl font-bold text-gray-600">
-                                    {pastTeams.length}
-                                </p>
+                {!isOrganizer && (
+                    <div>
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                            <h3 className="text-lg font-bold mb-4">
+                                Statistike
+                            </h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <p className="text-sm text-gray-600">
+                                        Ukupno registracija
+                                    </p>
+                                    <p className="text-2xl font-bold text-quiz-primary">
+                                        {myTeams.length}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">
+                                        Nadolazeći kvizovi
+                                    </p>
+                                    <p className="text-xl font-bold text-green-600">
+                                        {upcomingTeams.length}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">
+                                        Završeni kvizovi
+                                    </p>
+                                    <p className="text-xl font-bold text-gray-600">
+                                        {pastTeams.length}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
+                )}
+            </div>
+
+            {isOrganizer ? (
+                <div className="bg-white p-8 rounded-lg shadow-md text-center">
+                    <div className="text-6xl mb-4">🎯</div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                        Organizator profil
+                    </h2>
+                    <p className="text-gray-600 mb-6">
+                        Za upravljanje vašim kvizovima idite na stranicu "Moji
+                        kvizovi"
+                    </p>
+                    <Button
+                        text="🎯 Moji kvizovi"
+                        onClick={() => navigate(`/organizer/${user?.id}`)}
+                        variant="primary"
+                        className="px-8 py-3"
+                    />
                 </div>
-            </div>
+            ) : (
+                <div>
+                    <section className="mb-12">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                            Nadolazeći kvizovi ({upcomingTeams.length})
+                        </h2>
 
-            <div className="space-y-8">
-                <section>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                        Nadolazeći kvizovi ({upcomingTeams.length})
-                    </h2>
-
-                    {loading && (
-                        <div className="text-center py-8">
-                            <div className="text-gray-400 text-4xl mb-4 animate-pulse">
-                                ⏳
-                            </div>
-                            <p className="text-gray-600">Učitavanje...</p>
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="text-center py-8 text-red-600">
-                            {error}
-                        </div>
-                    )}
-
-                    {!loading && upcomingTeams.length === 0 && (
-                        <div className="text-center py-8">
-                            <div className="text-gray-400 text-4xl mb-4">
-                                📅
-                            </div>
-                            <p className="text-gray-600">
-                                Nema nadolazećih kvizova
-                            </p>
-                        </div>
-                    )}
-
-                    {upcomingTeams.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {upcomingTeams.map((team) => (
-                                <div
-                                    key={team.id}
-                                    className="bg-white p-4 rounded-lg shadow border"
-                                >
-                                    <h3 className="font-bold text-lg text-quiz-primary mb-2">
-                                        {team.quizName}
-                                    </h3>
-                                    <div className="space-y-1 text-sm text-gray-600">
-                                        <p>
-                                            <strong>Tim:</strong> {team.name}
-                                        </p>
-                                        <p>
-                                            <strong>Igrača:</strong>{" "}
-                                            {team.participantCount}
-                                        </p>
-                                        <p>
-                                            <strong>Datum:</strong>{" "}
-                                            {formatDate(team.quizDateTime)}
-                                        </p>
-                                    </div>
-                                    <div className="mt-3 flex gap-2">
-                                        <Button
-                                            text="👁️ Detalji"
-                                            onClick={() =>
-                                                navigate(`/quiz/${team.quizId}`)
-                                            }
-                                            variant="secondary"
-                                            className="flex-1 text-sm"
-                                        />
-                                        <Button
-                                            text="✏️ Uredi"
-                                            onClick={() => handleEditTeam(team)}
-                                            variant="white"
-                                            className="flex-1 text-sm"
-                                        />
-                                    </div>
+                        {upcomingTeams.length === 0 ? (
+                            <div className="text-center py-8">
+                                <div className="text-gray-400 text-4xl mb-4">
+                                    📅
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                        Završeni kvizovi ({pastTeams.length})
-                    </h2>
-
-                    {pastTeams.length === 0 ? (
-                        <div className="text-center py-8">
-                            <div className="text-gray-400 text-4xl mb-4">
-                                🏆
+                                <p className="text-gray-600">
+                                    Nema nadolazećih kvizova
+                                </p>
                             </div>
-                            <p className="text-gray-600">
-                                Nema završenih kvizova
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {pastTeams.map((team) => (
-                                <div
-                                    key={team.id}
-                                    className="bg-white p-4 rounded-lg shadow border"
-                                >
-                                    <h3 className="font-bold text-lg text-gray-700 mb-2">
-                                        {team.quizName}
-                                    </h3>
-                                    <div className="space-y-1 text-sm text-gray-600">
-                                        <p>
-                                            <strong>Tim:</strong> {team.name}
-                                        </p>
-                                        <p>
-                                            <strong>Igrača:</strong>{" "}
-                                            {team.participantCount}
-                                        </p>
-                                        <p>
-                                            <strong>Datum:</strong>{" "}
-                                            {formatDate(team.quizDateTime)}
-                                        </p>
-                                        {team.finalPosition && (
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {upcomingTeams.map((team) => (
+                                    <div
+                                        key={team.id}
+                                        className="bg-white p-4 rounded-lg shadow border"
+                                    >
+                                        <h3 className="font-bold text-lg text-gray-700 mb-2">
+                                            {team.quizName}
+                                        </h3>
+                                        <div className="space-y-1 text-sm text-gray-600">
                                             <p>
-                                                <strong>Pozicija:</strong>{" "}
-                                                {team.finalPosition}. mjesto
+                                                <strong>Tim:</strong>{" "}
+                                                {team.name}
                                             </p>
-                                        )}
+                                            <p>
+                                                <strong>Igrača:</strong>{" "}
+                                                {team.participantCount}
+                                            </p>
+                                            <p>
+                                                <strong>Datum:</strong>{" "}
+                                                {formatDate(team.quizDateTime)}
+                                            </p>
+                                        </div>
+                                        <div className="mt-3 flex gap-2">
+                                            <Button
+                                                text="👁️ Detalji"
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/quiz/${team.quizId}`
+                                                    )
+                                                }
+                                                variant="secondary"
+                                                className="flex-1 text-sm"
+                                            />
+                                            <Button
+                                                text="✏️ Uredi"
+                                                onClick={() =>
+                                                    handleEditTeam(team)
+                                                }
+                                                variant="white"
+                                                className="flex-1 text-sm"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="mt-3">
-                                        <Button
-                                            text="👁️ Rezultati"
-                                            onClick={() =>
-                                                navigate(`/quiz/${team.quizId}`)
-                                            }
-                                            variant="secondary"
-                                            className="w-full text-sm"
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-            </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
 
-            <EditTeamModal
-                isOpen={editTeamModal.isOpen}
-                onClose={() =>
-                    setEditTeamModal((prev) => ({ ...prev, isOpen: false }))
-                }
-                team={editTeamModal.team}
-                maxParticipantsPerTeam={editTeamModal.maxParticipants}
-                onSuccess={handleEditSuccess}
-            />
+                    <section>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                            Završeni kvizovi ({pastTeams.length})
+                        </h2>
+
+                        {pastTeams.length === 0 ? (
+                            <div className="text-center py-8">
+                                <div className="text-gray-400 text-4xl mb-4">
+                                    🏆
+                                </div>
+                                <p className="text-gray-600">
+                                    Nema završenih kvizova
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {pastTeams.map((team) => (
+                                    <div
+                                        key={team.id}
+                                        className="bg-white p-4 rounded-lg shadow border"
+                                    >
+                                        <h3 className="font-bold text-lg text-gray-700 mb-2">
+                                            {team.quizName}
+                                        </h3>
+                                        <div className="space-y-1 text-sm text-gray-600">
+                                            <p>
+                                                <strong>Tim:</strong>{" "}
+                                                {team.name}
+                                            </p>
+                                            <p>
+                                                <strong>Igrača:</strong>{" "}
+                                                {team.participantCount}
+                                            </p>
+                                            <p>
+                                                <strong>Datum:</strong>{" "}
+                                                {formatDate(team.quizDateTime)}
+                                            </p>
+                                            {team.finalPosition && (
+                                                <p>
+                                                    <strong>Pozicija:</strong>{" "}
+                                                    {team.finalPosition}. mjesto
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="mt-3">
+                                            <Button
+                                                text="👁️ Rezultati"
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/quiz/${team.quizId}`
+                                                    )
+                                                }
+                                                variant="secondary"
+                                                className="w-full text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </div>
+            )}
+
+            {!isOrganizer && (
+                <EditTeamModal
+                    isOpen={editTeamModal.isOpen}
+                    onClose={() =>
+                        setEditTeamModal((prev) => ({ ...prev, isOpen: false }))
+                    }
+                    team={editTeamModal.team}
+                    maxParticipantsPerTeam={editTeamModal.maxParticipants}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
             {user && (
                 <EditProfileModal
                     isOpen={editProfileModal}

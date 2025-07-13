@@ -67,7 +67,7 @@ function QuizDetailsPage() {
             if (isQuizFull) {
                 return {
                     text: "❌ Kviz je popunjen",
-                    onClick: () => {},
+                    onClick: () => { },
                     variant: "secondary" as const,
                     disabled: true,
                 };
@@ -89,7 +89,7 @@ function QuizDetailsPage() {
             return {
                 text: "⚙️ Upravljaj kvizom",
                 onClick: () => {
-                    alert("TODO: Edit kviz - implementirati kasnije");
+                    navigate(`/edit-quiz/${quiz.id}`);
                 },
                 variant: "secondary" as const,
                 disabled: false,
@@ -99,7 +99,7 @@ function QuizDetailsPage() {
         if (userRole === "ORGANIZER" && !isOwner) {
             return {
                 text: "🚫 Samo vlasnik može upravljati",
-                onClick: () => {},
+                onClick: () => { },
                 variant: "secondary" as const,
                 disabled: true,
             };
@@ -109,7 +109,7 @@ function QuizDetailsPage() {
             return {
                 text: "👑 Upravljaj kvizom (Admin)",
                 onClick: () => {
-                    alert("TODO: Admin edit kviz - implementirati kasnije");
+                    navigate(`/edit-quiz/${quiz.id}`);
                 },
                 variant: "secondary" as const,
                 disabled: false,
@@ -452,7 +452,7 @@ function QuizDetailsPage() {
                                             width: `${Math.min(
                                                 (quiz.registeredTeamsCount /
                                                     quiz.maxTeams) *
-                                                    100,
+                                                100,
                                                 100
                                             )}%`,
                                         }}
@@ -548,7 +548,7 @@ function QuizDetailsPage() {
                                                     />
                                                     <Button
                                                         text="📝 Uredi tim"
-                                                        onClick={handleEditTeam} // Promjena
+                                                        onClick={handleEditTeam} 
                                                         variant="white"
                                                         className="flex-1 text-sm"
                                                     />

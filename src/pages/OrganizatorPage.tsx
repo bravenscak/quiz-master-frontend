@@ -22,6 +22,8 @@ function OrganizatorPage() {
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [subscriptionLoading, setSubscriptionLoading] = useState(false);
 
+    const isOwnProfile = user?.id.toString() === id;
+
     const fetchOrganizerData = async (organizerId: number) => {
         setLoading(true);
         setError("");
@@ -63,33 +65,29 @@ function OrganizatorPage() {
         }
     }, [id]);
 
-    useEffect(() => {
-        if (isAuthenticated && organizer) {
-            checkSubscriptionStatus(organizer.id);
-        }
-    }, [isAuthenticated, organizer]);
-
     const checkSubscriptionStatus = async (organizerId: number) => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || !user) return;
 
         try {
-            const status = await SubscriptionService.getSubscriptionStatus(
-                organizerId
-            );
-            setIsSubscribed(status);
+            const subscribed = await SubscriptionService.getSubscriptionStatus(organizerId);
+            setIsSubscribed(subscribed);
         } catch (err) {
             console.error("Greška pri provjeri subscription:", err);
         }
     };
 
+    useEffect(() => {
+        if (organizer && isAuthenticated && user?.id !== organizer.id) {
+            checkSubscriptionStatus(organizer.id);
+        }
+    }, [organizer, isAuthenticated, user]);
+
     const handleSubscriptionToggle = async () => {
-        if (!organizer) return;
+        if (!organizer || !user) return;
 
         setSubscriptionLoading(true);
         try {
-            const newStatus = await SubscriptionService.toggleSubscription(
-                organizer.id
-            );
+            const newStatus = await SubscriptionService.toggleSubscription(organizer.id);
             setIsSubscribed(newStatus);
 
             const message = newStatus
@@ -147,12 +145,23 @@ function OrganizatorPage() {
 
     return (
         <main className="p-8 max-w-6xl mx-auto">
-            <Button
-                text="← Nazad"
-                onClick={() => navigate("/")}
-                variant="secondary"
-                className="mb-6"
-            />
+            <div className="flex justify-between items-center mb-6">
+                <Button
+                    text="← Nazad"
+                    onClick={() => navigate("/")}
+                    variant="secondary"
+                />
+                
+                {isOwnProfile && (
+                    <Button
+                        text="+ Stvori novi kviz"
+                        onClick={() => navigate("/create-quiz")}
+                        variant="primary"
+                        className="px-6 py-3"
+                    />
+                )}
+            </div>
+            
             <div className="mb-8 text-center">
                 <h1 className="text-quiz-primary text-4xl font-bold mb-2">
                     {organizer.organizationName || `@${organizer.username}`}
@@ -192,9 +201,18 @@ function OrganizatorPage() {
             )}
             
             <section className="mb-12">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                    Nadolazeći kvizovi ({upcomingQuizzes.length})
-                </h2>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800">
+                        Nadolazeći kvizovi ({upcomingQuizzes.length})
+                    </h2>
+                    
+                    {isOwnProfile && upcomingQuizzes.length === 0 && (
+                        <p className="text-gray-500 text-sm">
+                            Nemate nadolazećih kvizova
+                        </p>
+                    )}
+                </div>
+                
                 {upcomingQuizzes.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {upcomingQuizzes.map((quiz) => (
@@ -206,11 +224,26 @@ function OrganizatorPage() {
                         ))}
                     </div>
                 ) : (
-                    <p className="text-gray-500 text-center py-8">
-                        Nema nadolazećih kvizova
-                    </p>
+                    <div className="text-center py-12">
+                        <div className="text-gray-400 text-5xl mb-4">📅</div>
+                        <p className="text-gray-500">
+                            {isOwnProfile 
+                                ? "Nemate nadolazećih kvizova. Stvorite novi kviz!" 
+                                : "Nema nadolazećih kvizova"
+                            }
+                        </p>
+                        {isOwnProfile && (
+                            <Button
+                                text="+ Stvori prvi kviz"
+                                onClick={() => navigate("/create-quiz")}
+                                variant="primary"
+                                className="mt-4 px-6 py-3"
+                            />
+                        )}
+                    </div>
                 )}
             </section>
+            
             <section>
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">
                     Prošli kvizovi ({pastQuizzes.length})
@@ -226,9 +259,12 @@ function OrganizatorPage() {
                         ))}
                     </div>
                 ) : (
-                    <p className="text-gray-500 text-center py-8">
-                        Nema prošlih kvizova
-                    </p>
+                    <div className="text-center py-12">
+                        <div className="text-gray-400 text-5xl mb-4">🏆</div>
+                        <p className="text-gray-500">
+                            Nema prošlih kvizova
+                        </p>
+                    </div>
                 )}
             </section>
         </main>

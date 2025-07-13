@@ -34,3 +34,33 @@ export interface QuizSearchParams {
   sortBy?: 'DateTime' | 'Name' | 'CategoryName' | 'RegisteredTeams';
   sortDirection?: 'Ascending' | 'Descending';
 }
+
+export interface CreateQuizRequest {
+  name: string;
+  locationName: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  entryFee?: number;
+  dateTime: string; 
+  maxParticipantsPerTeam: number;
+  maxTeams: number;
+  durationMinutes?: number;
+  description?: string;
+  categoryId: number;
+}
+
+export interface UpdateQuizRequest {
+  name: string;
+  locationName: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  entryFee?: number;
+  dateTime: string;
+  maxParticipantsPerTeam: number;
+  maxTeams: number;
+  durationMinutes?: number;
+  description?: string;
+  categoryId: number;
+}
