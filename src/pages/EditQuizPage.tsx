@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
-import Button from '../components/Button';
-import { CategoryService, Category } from '../services/categoryService';
-import { QuizService } from '../services/quizService';
-import { useAuth } from '../contexts/AuthContext';
-import { UpdateQuizRequest } from '../types/quiz';
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router-dom";
+import Button from "../components/Button";
+import { CategoryService, Category } from "../services/categoryService";
+import { QuizService } from "../services/quizService";
+import { useAuth } from "../contexts/AuthContext";
+import { UpdateQuizRequest } from "../types/quiz";
 
 interface EditQuizFormData {
     name: string;
@@ -30,20 +30,26 @@ function EditQuizPage() {
         handleSubmit,
         formState: { errors, isSubmitting },
         setValue,
-        watch
+        watch,
     } = useForm<EditQuizFormData>();
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [categoriesLoading, setCategoriesLoading] = useState(true);
-    const [categoriesError, setCategoriesError] = useState('');
+    const [categoriesError, setCategoriesError] = useState("");
 
-    const [submitError, setSubmitError] = useState('');
+    const [submitError, setSubmitError] = useState("");
     const [loading, setLoading] = useState(true);
     const [quiz, setQuiz] = useState<any>(null);
 
+    const [isDeleting, setIsDeleting] = useState(false);
+
     useEffect(() => {
-        if (user && user.roleName !== 'ORGANIZER' && user.roleName !== 'ADMIN') {
-            navigate('/');
+        if (
+            user &&
+            user.roleName !== "ORGANIZER" &&
+            user.roleName !== "ADMIN"
+        ) {
+            navigate("/");
             return;
         }
     }, [user, navigate]);
@@ -57,19 +63,18 @@ function EditQuizPage() {
             const quizDate = new Date(quizData.dateTime);
             const formattedDateTime = quizDate.toISOString().slice(0, 16);
 
-            setValue('name', quizData.name);
-            setValue('locationName', quizData.locationName);
-            setValue('address', quizData.address);
-            setValue('entryFee', quizData.entryFee || undefined);
-            setValue('dateTime', formattedDateTime);
-            setValue('maxParticipantsPerTeam', quizData.maxParticipantsPerTeam);
-            setValue('maxTeams', quizData.maxTeams);
-            setValue('durationMinutes', quizData.durationMinutes || undefined);
-            setValue('description', quizData.description || '');
-
+            setValue("name", quizData.name);
+            setValue("locationName", quizData.locationName);
+            setValue("address", quizData.address);
+            setValue("entryFee", quizData.entryFee || undefined);
+            setValue("dateTime", formattedDateTime);
+            setValue("maxParticipantsPerTeam", quizData.maxParticipantsPerTeam);
+            setValue("maxTeams", quizData.maxTeams);
+            setValue("durationMinutes", quizData.durationMinutes || undefined);
+            setValue("description", quizData.description || "");
         } catch (err: any) {
-            setSubmitError(err.message || 'Greška pri dohvaćanju kviza');
-            navigate('/');
+            setSubmitError(err.message || "Greška pri dohvaćanju kviza");
+            navigate("/");
         } finally {
             setLoading(false);
         }
@@ -77,13 +82,15 @@ function EditQuizPage() {
 
     const fetchCategories = async () => {
         setCategoriesLoading(true);
-        setCategoriesError('');
+        setCategoriesError("");
 
         try {
             const data = await CategoryService.getCategories();
             setCategories(data);
         } catch (err: any) {
-            setCategoriesError(err.message || 'Greška pri dohvaćanju kategorija');
+            setCategoriesError(
+                err.message || "Greška pri dohvaćanju kategorija"
+            );
         } finally {
             setCategoriesLoading(false);
         }
@@ -97,22 +104,24 @@ function EditQuizPage() {
             if (!isNaN(quizId)) {
                 fetchQuiz(quizId);
             } else {
-                navigate('/');
+                navigate("/");
             }
         }
     }, [id]);
 
     useEffect(() => {
         if (quiz && categories.length > 0) {
-            const category = categories.find(cat => cat.name === quiz.categoryName);
+            const category = categories.find(
+                (cat) => cat.name === quiz.categoryName
+            );
             if (category) {
-                setValue('categoryId', category.id);
+                setValue("categoryId", category.id);
             }
         }
     }, [quiz, categories, setValue]);
 
     const onSubmit = async (data: EditQuizFormData) => {
-        setSubmitError('');
+        setSubmitError("");
 
         if (!quiz) return;
 
@@ -127,21 +136,45 @@ function EditQuizPage() {
                 maxTeams: data.maxTeams,
                 durationMinutes: data.durationMinutes || undefined,
                 description: data.description || undefined,
-                categoryId: data.categoryId
+                categoryId: data.categoryId,
             };
 
-            const updatedQuiz = await QuizService.updateQuiz(quiz.id, updateRequest);
+            const updatedQuiz = await QuizService.updateQuiz(
+                quiz.id,
+                updateRequest
+            );
 
             alert(`Kviz "${updatedQuiz.name}" je uspješno ažuriran!`);
             navigate(`/quiz/${quiz.id}`);
         } catch (err: any) {
-            setSubmitError(err.message || 'Greška pri ažuriranju kviza');
+            setSubmitError(err.message || "Greška pri ažuriranju kviza");
         }
     };
 
     const formatDateTimeForBackend = (dateTimeLocal: string): string => {
         const date = new Date(dateTimeLocal);
         return date.toISOString();
+    };
+
+    const handleDeleteQuiz = async () => {
+        if (!quiz) return;
+
+        const confirmed = window.confirm(
+            `Jeste li sigurni da želite obrisati kviz "${quiz.name}"?\n\nOva akcija će također obrisati sve registrirane timove i ne može se poništiti.`
+        );
+
+        if (!confirmed) return;
+
+        setIsDeleting(true);
+        try {
+            await QuizService.deleteQuiz(quiz.id);
+            alert("Kviz je uspješno obrisan!");
+            navigate("/");
+        } catch (err: any) {
+            alert(`Greška pri brisanju kviza: ${err.message}`);
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     if (loading) {
@@ -200,7 +233,6 @@ function EditQuizPage() {
 
             <div className="bg-white rounded-lg shadow-md p-8">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-
                     {submitError && (
                         <div className="bg-red-50 text-red-600 p-4 rounded-md">
                             {submitError}
@@ -218,18 +250,21 @@ function EditQuizPage() {
                             </label>
                             <input
                                 type="text"
-                                {...register('name', {
-                                    required: 'Naziv kviza je obavezan',
+                                {...register("name", {
+                                    required: "Naziv kviza je obavezan",
                                     maxLength: {
                                         value: 200,
-                                        message: 'Naziv ne smije biti duži od 200 znakova'
-                                    }
+                                        message:
+                                            "Naziv ne smije biti duži od 200 znakova",
+                                    },
                                 })}
                                 className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                                 placeholder="npr. Zabavni pub kviz - Zagreb"
                             />
                             {errors.name && (
-                                <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                                <p className="text-red-500 text-sm mt-1">
+                                    {errors.name.message}
+                                </p>
                             )}
                         </div>
 
@@ -238,27 +273,36 @@ function EditQuizPage() {
                                 Kategorija *
                             </label>
                             <select
-                                {...register('categoryId', {
-                                    required: 'Kategorija je obavezna',
-                                    valueAsNumber: true
+                                {...register("categoryId", {
+                                    required: "Kategorija je obavezna",
+                                    valueAsNumber: true,
                                 })}
                                 disabled={categoriesLoading}
                                 className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none disabled:opacity-50"
                             >
                                 <option value="">
-                                    {categoriesLoading ? 'Učitavanje...' : 'Odaberite kategoriju'}
+                                    {categoriesLoading
+                                        ? "Učitavanje..."
+                                        : "Odaberite kategoriju"}
                                 </option>
-                                {categories.map(category => (
-                                    <option key={category.id} value={category.id}>
+                                {categories.map((category) => (
+                                    <option
+                                        key={category.id}
+                                        value={category.id}
+                                    >
                                         {category.name}
                                     </option>
                                 ))}
                             </select>
                             {errors.categoryId && (
-                                <p className="text-red-500 text-sm mt-1">{errors.categoryId.message}</p>
+                                <p className="text-red-500 text-sm mt-1">
+                                    {errors.categoryId.message}
+                                </p>
                             )}
                             {categoriesError && (
-                                <p className="text-orange-500 text-sm mt-1">{categoriesError}</p>
+                                <p className="text-orange-500 text-sm mt-1">
+                                    {categoriesError}
+                                </p>
                             )}
                         </div>
                     </div>
@@ -275,18 +319,21 @@ function EditQuizPage() {
                                 </label>
                                 <input
                                     type="text"
-                                    {...register('locationName', {
-                                        required: 'Naziv lokacije je obavezan',
+                                    {...register("locationName", {
+                                        required: "Naziv lokacije je obavezan",
                                         maxLength: {
                                             value: 100,
-                                            message: 'Naziv lokacije ne smije biti duži od 100 znakova'
-                                        }
+                                            message:
+                                                "Naziv lokacije ne smije biti duži od 100 znakova",
+                                        },
                                     })}
                                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                                     placeholder="npr. Caffe Bar Central"
                                 />
                                 {errors.locationName && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.locationName.message}</p>
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.locationName.message}
+                                    </p>
                                 )}
                             </div>
 
@@ -296,18 +343,21 @@ function EditQuizPage() {
                                 </label>
                                 <input
                                     type="text"
-                                    {...register('address', {
-                                        required: 'Adresa je obavezna',
+                                    {...register("address", {
+                                        required: "Adresa je obavezna",
                                         maxLength: {
                                             value: 200,
-                                            message: 'Adresa ne smije biti duža od 200 znakova'
-                                        }
+                                            message:
+                                                "Adresa ne smije biti duža od 200 znakova",
+                                        },
                                     })}
                                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                                     placeholder="npr. Ilica 1, Zagreb"
                                 />
                                 {errors.address && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.address.message}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -324,21 +374,23 @@ function EditQuizPage() {
                             </label>
                             <input
                                 type="datetime-local"
-                                {...register('dateTime', {
-                                    required: 'Datum i vrijeme su obavezni',
+                                {...register("dateTime", {
+                                    required: "Datum i vrijeme su obavezni",
                                     validate: (value) => {
                                         const selectedDate = new Date(value);
                                         const now = new Date();
                                         if (selectedDate <= now) {
-                                            return 'Datum i vrijeme moraju biti u budućnosti';
+                                            return "Datum i vrijeme moraju biti u budućnosti";
                                         }
                                         return true;
-                                    }
+                                    },
                                 })}
                                 className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                             />
                             {errors.dateTime && (
-                                <p className="text-red-500 text-sm mt-1">{errors.dateTime.message}</p>
+                                <p className="text-red-500 text-sm mt-1">
+                                    {errors.dateTime.message}
+                                </p>
                             )}
                         </div>
                     </div>
@@ -355,24 +407,26 @@ function EditQuizPage() {
                                 </label>
                                 <input
                                     type="number"
-                                    {...register('maxParticipantsPerTeam', {
-                                        required: 'Broj sudionika je obavezan',
+                                    {...register("maxParticipantsPerTeam", {
+                                        required: "Broj sudionika je obavezan",
                                         valueAsNumber: true,
                                         min: {
                                             value: 1,
-                                            message: 'Minimum je 1 sudionik'
+                                            message: "Minimum je 1 sudionik",
                                         },
                                         max: {
                                             value: 20,
-                                            message: 'Maksimum je 20 sudionika'
-                                        }
+                                            message: "Maksimum je 20 sudionika",
+                                        },
                                     })}
                                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                                     min="1"
                                     max="20"
                                 />
                                 {errors.maxParticipantsPerTeam && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.maxParticipantsPerTeam.message}</p>
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.maxParticipantsPerTeam.message}
+                                    </p>
                                 )}
                             </div>
 
@@ -382,24 +436,26 @@ function EditQuizPage() {
                                 </label>
                                 <input
                                     type="number"
-                                    {...register('maxTeams', {
-                                        required: 'Broj timova je obavezan',
+                                    {...register("maxTeams", {
+                                        required: "Broj timova je obavezan",
                                         valueAsNumber: true,
                                         min: {
                                             value: 1,
-                                            message: 'Minimum je 1 tim'
+                                            message: "Minimum je 1 tim",
                                         },
                                         max: {
                                             value: 100,
-                                            message: 'Maksimum je 100 timova'
-                                        }
+                                            message: "Maksimum je 100 timova",
+                                        },
                                     })}
                                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                                     min="1"
                                     max="100"
                                 />
                                 {errors.maxTeams && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.maxTeams.message}</p>
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.maxTeams.message}
+                                    </p>
                                 )}
                             </div>
 
@@ -409,16 +465,17 @@ function EditQuizPage() {
                                 </label>
                                 <input
                                     type="number"
-                                    {...register('durationMinutes', {
+                                    {...register("durationMinutes", {
                                         valueAsNumber: true,
                                         min: {
                                             value: 30,
-                                            message: 'Minimum je 30 minuta'
+                                            message: "Minimum je 30 minuta",
                                         },
                                         max: {
                                             value: 480,
-                                            message: 'Maksimum je 480 minuta (8 sati)'
-                                        }
+                                            message:
+                                                "Maksimum je 480 minuta (8 sati)",
+                                        },
                                     })}
                                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                                     min="30"
@@ -426,7 +483,9 @@ function EditQuizPage() {
                                     placeholder="120"
                                 />
                                 {errors.durationMinutes && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.durationMinutes.message}</p>
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.durationMinutes.message}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -445,16 +504,18 @@ function EditQuizPage() {
                                 <input
                                     type="number"
                                     step="0.01"
-                                    {...register('entryFee', {
+                                    {...register("entryFee", {
                                         valueAsNumber: true,
                                         min: {
                                             value: 0,
-                                            message: 'Kotizacija ne može biti negativna'
+                                            message:
+                                                "Kotizacija ne može biti negativna",
                                         },
                                         max: {
                                             value: 10000,
-                                            message: 'Maksimalna kotizacija je 10.000€'
-                                        }
+                                            message:
+                                                "Maksimalna kotizacija je 10.000€",
+                                        },
                                     })}
                                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                                     min="0"
@@ -462,7 +523,9 @@ function EditQuizPage() {
                                     placeholder="0.00"
                                 />
                                 {errors.entryFee && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.entryFee.message}</p>
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.entryFee.message}
+                                    </p>
                                 )}
                             </div>
 
@@ -472,21 +535,44 @@ function EditQuizPage() {
                                         Opis kviza
                                     </label>
                                     <textarea
-                                        {...register('description', {
+                                        {...register("description", {
                                             maxLength: {
                                                 value: 1000,
-                                                message: 'Opis ne smije biti duži od 1000 znakova'
-                                            }
+                                                message:
+                                                    "Opis ne smije biti duži od 1000 znakova",
+                                            },
                                         })}
                                         className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none flex-grow min-h-[120px] resize-none"
                                         placeholder="Opišite svoj kviz - tema, nagrada, posebnosti..."
                                         rows={5}
                                     />
                                     {errors.description && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {errors.description.message}
+                                        </p>
                                     )}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="border-t border-gray-200 pt-6 mt-8">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <p className="text-red-700 text-sm mb-4">
+                                Brisanje kviza je nepovratna akcija. Bit će
+                                obrisani svi registrirani timovi.
+                            </p>
+                            <Button
+                                text={
+                                    isDeleting
+                                        ? "🗑️ Brišem..."
+                                        : "🗑️ Obriši kviz"
+                                }
+                                onClick={handleDeleteQuiz}
+                                variant="danger"
+                                disabled={isDeleting || isSubmitting}
+                                className="px-4 py-2"
+                            />
                         </div>
                     </div>
 
@@ -499,8 +585,12 @@ function EditQuizPage() {
                             className="flex-1"
                         />
                         <Button
-                            text={isSubmitting ? 'Ažuriram kviz...' : 'Ažuriraj kviz'}
-                            onClick={() => { }}
+                            text={
+                                isSubmitting
+                                    ? "Ažuriram kviz..."
+                                    : "Ažuriraj kviz"
+                            }
+                            onClick={() => {}}
                             variant="primary"
                             disabled={isSubmitting}
                             className="flex-1"

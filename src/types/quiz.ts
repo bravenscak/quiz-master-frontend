@@ -2,9 +2,14 @@ export interface QuizCardData {
   id: number;
   name: string;
   organizerName: string;
+  organizerId: number; 
   locationName: string;
+  address: string;   
   dateTime: string; 
   categoryName: string;
+  registeredTeamsCount: number;  
+  maxTeams: number;    
+  entryFee?: number;    
 }
 
 export interface QuizDetails {

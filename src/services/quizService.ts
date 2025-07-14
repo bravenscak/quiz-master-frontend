@@ -92,4 +92,21 @@ export class QuizService {
     }
   }
 
+  static async deleteQuiz(id: number): Promise<void> {
+    try {
+      await api.delete(`/quiz/${id}`);
+    } catch (error: any) {
+      if (error.response?.data && typeof error.response.data === 'string') {
+        throw new Error(error.response.data);
+      }
+      if (error.response?.status === 403) {
+        throw new Error('Možete obrisati samo svoje kvizove');
+      }
+      if (error.response?.status === 404) {
+        throw new Error('Kviz nije pronađen');
+      }
+      throw new Error('Greška pri brisanju kviza');
+    }
+  }
+
 }

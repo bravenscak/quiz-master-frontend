@@ -3,15 +3,15 @@ import React from 'react';
 interface ButtonProps {
   text: string;
   onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'white';
-  disabled?: boolean;  
-  className?: string;  
+  variant?: 'primary' | 'secondary' | 'white' | 'danger';
+  disabled?: boolean;
+  className?: string;
 }
 
-function Button({ 
-  text, 
-  onClick, 
-  variant = 'primary', 
+function Button({
+  text,
+  onClick,
+  variant = 'primary',
   disabled = false,
   className = ''
 }: ButtonProps) {
@@ -23,6 +23,8 @@ function Button({
         return 'bg-quiz-gray text-white border-0 hover:bg-gray-600';
       case 'white':
         return 'bg-white text-quiz-primary border-2 border-white hover:bg-gray-50';
+      case 'danger':
+        return 'bg-red-600 text-white border-0 hover:bg-red-700';
       default:
         return 'bg-quiz-primary text-white border-0 hover:bg-green-600';
     }
@@ -37,7 +39,7 @@ function Button({
 
   return (
     <button
-      onClick={disabled ? undefined : onClick} 
+      onClick={disabled ? undefined : onClick}
       disabled={disabled}
       className={`
         ${getVariantClasses()}

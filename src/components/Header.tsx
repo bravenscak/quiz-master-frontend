@@ -126,13 +126,23 @@ function Header() {
 
                   {user?.roleName === "ORGANIZER" && (
                     <Link
-                      to={"/organizer/" + user.id}  
+                      to={"/organizer/" + user.id}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 no-underline"
                       onClick={() =>
                         setShowDropdown(false)
                       }
                     >
                       🎯 Moji kvizovi
+                    </Link>
+                  )}
+
+                  {user?.roleName === "ADMIN" && (
+                    <Link
+                      to="/admin"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 no-underline"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      👑 Admin Panel
                     </Link>
                   )}
 
