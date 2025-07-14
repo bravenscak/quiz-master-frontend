@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import TeamRegistrationModal from "../components/TeamRegistrationModal";
+import SetResultsModal from "../components/SetResultsModal";
+import ViewResultsModal from "../components/ViewResultsModal";
 import { QuizService } from "../services/quizService";
 import { TeamService, QuizTeam } from "../services/teamService";
 import { QuizDetails } from "../types/quiz";
@@ -27,6 +29,9 @@ function QuizDetailsPage() {
 
     const [registeredTeams, setRegisteredTeams] = useState<QuizTeam[]>([]);
 
+    const [setResultsModal, setSetResultsModal] = useState(false);
+    const [viewResultsModal, setViewResultsModal] = useState(false);
+
     const [editTeamModal, setEditTeamModal] = useState<{
         isOpen: boolean;
         team: QuizTeam | null;
@@ -34,6 +39,10 @@ function QuizDetailsPage() {
         isOpen: false,
         team: null,
     });
+
+    const isQuizFinished = quiz && new Date(quiz.dateTime) < new Date();
+    const isQuizOwner = user && quiz && user.id === quiz.organizerId;
+    const hasResults = registeredTeams.some(team => team.finalPosition !== null && team.finalPosition !== undefined);
 
     const getActionButtonConfig = () => {
         if (!quiz) return null;
@@ -159,6 +168,12 @@ function QuizDetailsPage() {
     };
 
     const handleRegistrationSuccess = async () => {
+        if (quiz) {
+            await fetchQuiz(quiz.id);
+        }
+    };
+
+    const handleResultsSuccess = async () => {
         if (quiz) {
             await fetchQuiz(quiz.id);
         }
@@ -350,6 +365,13 @@ function QuizDetailsPage() {
                         <p className="text-lg text-gray-700">
                             {formatDateTime(quiz.dateTime)}
                         </p>
+                        {isQuizFinished && (
+                            <div className="mt-2">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✅ Kviz završen
+                                </span>
+                            </div>
+                        )}
                         {quiz.durationMinutes && (
                             <p className="text-gray-600 mt-2">
                                 Trajanje: {quiz.durationMinutes} minuta
@@ -384,12 +406,33 @@ function QuizDetailsPage() {
 
                     {registeredTeams.length > 0 && (
                         <div className="bg-white p-6 rounded-lg shadow-md">
-                            <div className="flex items-center mb-4">
-                                <div className="text-quiz-primary mr-3">👥</div>
-                                <h3 className="text-xl font-bold text-gray-800">
-                                    Registrirani timovi (
-                                    {registeredTeams.length})
-                                </h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center">
+                                    <div className="text-quiz-primary mr-3">👥</div>
+                                    <h3 className="text-xl font-bold text-gray-800">
+                                        Registrirani timovi ({registeredTeams.length})
+                                    </h3>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    {hasResults && (
+                                        <Button
+                                            text="🏆 Rezultati"
+                                            onClick={() => setViewResultsModal(true)}
+                                            variant="secondary"
+                                            className="text-sm"
+                                        />
+                                    )}
+
+                                    {isQuizOwner && isQuizFinished && (
+                                        <Button
+                                            text="📊 Unesi rezultate"
+                                            onClick={() => setSetResultsModal(true)}
+                                            variant="primary"
+                                            className="text-sm"
+                                        />
+                                    )}
+                                </div>
                             </div>
                             <div className="space-y-3">
                                 {registeredTeams.map((team) => (
@@ -400,6 +443,11 @@ function QuizDetailsPage() {
                                         <div>
                                             <p className="font-medium">
                                                 {team.name}
+                                                {team.finalPosition && (
+                                                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                        #{team.finalPosition}
+                                                    </span>
+                                                )}
                                             </p>
                                             <p className="text-sm text-gray-600">
                                                 Kapetan: {team.captainName}
@@ -548,7 +596,7 @@ function QuizDetailsPage() {
                                                     />
                                                     <Button
                                                         text="📝 Uredi tim"
-                                                        onClick={handleEditTeam} 
+                                                        onClick={handleEditTeam}
                                                         variant="white"
                                                         className="flex-1 text-sm"
                                                     />
@@ -584,6 +632,21 @@ function QuizDetailsPage() {
                     onSuccess={handleEditTeamSuccess}
                 />
             )}
+
+            <SetResultsModal
+                isOpen={setResultsModal}
+                onClose={() => setSetResultsModal(false)}
+                onSuccess={handleResultsSuccess}
+                teams={registeredTeams}
+                quizName={quiz.name}
+            />
+
+            <ViewResultsModal
+                isOpen={viewResultsModal}
+                onClose={() => setViewResultsModal(false)}
+                teams={registeredTeams}
+                quizName={quiz.name}
+            />
         </main>
     );
 }

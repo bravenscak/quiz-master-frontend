@@ -9,22 +9,31 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/Button";
 
+interface Organizer {
+    id: number;
+    name: string;
+}
+
 function HomePage() {
     const navigate = useNavigate();
     const { user } = useAuth();
 
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
-        null
-    );
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+    const [selectedOrganizerId, setSelectedOrganizerId] = useState<number | null>(null);
+    const [dateFrom, setDateFrom] = useState<string>("");
+    const [dateTo, setDateTo] = useState<string>("");
 
     const [quizzes, setQuizzes] = useState<QuizCardData[]>([]);
+    const [allQuizzes, setAllQuizzes] = useState<QuizCardData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [categoriesLoading, setCategoriesLoading] = useState(true);
     const [categoriesError, setCategoriesError] = useState("");
+
+    const [organizers, setOrganizers] = useState<Organizer[]>([]);
 
     const handleQuizClick = (quizId: number) => {
         navigate(`/quiz/${quizId}`);
@@ -53,45 +62,76 @@ function HomePage() {
 
         try {
             const params: QuizSearchParams = {
-                searchTerm: searchTerm || undefined,
                 sortBy: "DateTime",
                 sortDirection: "Ascending",
             };
 
-            if (selectedCategoryId) {
-                params.categoryId = selectedCategoryId;
-            }
-
             const data = await QuizService.getQuizzes(params);
-            setQuizzes(data);
+            setAllQuizzes(data);
+
+            const uniqueOrganizers = Array.from(
+                new Map(data.map(q => [q.organizerId, { id: q.organizerId, name: q.organizerName }])).values()
+            ).sort((a, b) => a.name.localeCompare(b.name));
+            setOrganizers(uniqueOrganizers);
+
         } catch (err: any) {
             setError(err.message || "Greška pri dohvaćanju kvizova");
-            setQuizzes([]);
+            setAllQuizzes([]);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchCategories();
-    }, []);
+        let filtered = [...allQuizzes];
+
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            filtered = filtered.filter(q => 
+                q.name.toLowerCase().includes(term) ||
+                q.organizerName.toLowerCase().includes(term) ||
+                q.locationName.toLowerCase().includes(term)
+            );
+        }
+
+        if (selectedCategoryId) {
+            filtered = filtered.filter(q => q.categoryId === selectedCategoryId);
+        }
+
+        if (selectedOrganizerId) {
+            filtered = filtered.filter(q => q.organizerId === selectedOrganizerId);
+        }
+
+        if (dateFrom) {
+            const fromDate = new Date(dateFrom);
+            fromDate.setHours(0, 0, 0, 0);
+            filtered = filtered.filter(q => new Date(q.dateTime) >= fromDate);
+        }
+
+        if (dateTo) {
+            const toDate = new Date(dateTo);
+            toDate.setHours(23, 59, 59, 999);
+            filtered = filtered.filter(q => new Date(q.dateTime) <= toDate);
+        }
+
+        setQuizzes(filtered);
+    }, [allQuizzes, searchTerm, selectedCategoryId, selectedOrganizerId, dateFrom, dateTo]);
 
     useEffect(() => {
+        fetchCategories();
         fetchQuizzes();
     }, []);
-
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            fetchQuizzes();
-        }, 100);
-
-        return () => clearTimeout(timeoutId);
-    }, [searchTerm, selectedCategoryId]);
 
     const clearFilters = () => {
         setSearchTerm("");
         setSelectedCategoryId(null);
+        setSelectedOrganizerId(null);
+        setDateFrom("");
+        setDateTo("");
     };
+
+    const hasActiveFilters = searchTerm || selectedCategoryId || selectedOrganizerId || dateFrom || dateTo;
+    const today = new Date().toISOString().split('T')[0];
 
     return (
         <main className="p-8">
@@ -118,45 +158,94 @@ function HomePage() {
             </div>
 
             <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
-                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                    <SearchBar
-                        searchTerm={searchTerm}
-                        onSearchChange={setSearchTerm}
-                        placeholder="Pretraži po nazivu, organizatoru ili lokaciji..."
-                    />
+                <div className="flex flex-wrap gap-4 items-end mb-4">
+                    <div className="flex-1 min-w-[200px]">
+                        <SearchBar
+                            searchTerm={searchTerm}
+                            onSearchChange={setSearchTerm}
+                            placeholder="Pretraži po nazivu, organizatoru..."
+                        />
+                    </div>
 
-                    <CategoryFilter
-                        selectedCategoryId={selectedCategoryId}
-                        onCategoryChange={setSelectedCategoryId}
-                        categories={categories}
-                        loading={categoriesLoading}
-                    />
+                    <div className="min-w-[150px]">
+                        <CategoryFilter
+                            selectedCategoryId={selectedCategoryId}
+                            onCategoryChange={setSelectedCategoryId}
+                            categories={categories}
+                            loading={categoriesLoading}
+                        />
+                    </div>
 
-                    {(searchTerm || selectedCategoryId) && (
+                    <div className="relative min-w-[150px]">
+                        <select
+                            value={selectedOrganizerId || ''}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setSelectedOrganizerId(value ? parseInt(value) : null);
+                            }}
+                            className="appearance-none bg-white border-2 border-gray-200 rounded-lg px-4 py-2 pr-8 text-base transition-colors duration-200 focus:border-quiz-primary focus:outline-none cursor-pointer w-full"
+                        >
+                            <option value="">Svi organizatori</option>
+                            {organizers.map(organizer => (
+                                <option key={organizer.id} value={organizer.id}>
+                                    {organizer.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div className="min-w-[120px]">
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            min={today}
+                            placeholder="Od datuma"
+                            className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none text-sm"
+                        />
+                    </div>
+
+                    <div className="min-w-[120px]">
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            min={dateFrom || today}
+                            placeholder="Do datuma"
+                            className="w-full p-2 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none text-sm"
+                        />
+                    </div>
+
+                    {hasActiveFilters && (
                         <button
                             onClick={clearFilters}
-                            className="
-                text-quiz-primary 
-                text-sm 
-                underline 
-                hover:no-underline
-                transition-all
-                duration-200
-                whitespace-nowrap
-              "
+                            className="text-quiz-primary text-sm underline hover:no-underline transition-all duration-200 whitespace-nowrap"
                         >
                             Očisti filtere
                         </button>
                     )}
                 </div>
 
-                <div className="mt-4 text-sm text-gray-600">
+                <div className="text-sm text-gray-600">
                     {loading ? (
                         "Učitavanje kvizova..."
                     ) : error ? (
                         <span className="text-red-600">Greška: {error}</span>
                     ) : (
-                        `Prikazuje se ${quizzes.length} kvizova`
+                        <>
+                            Prikazano {quizzes.length} od {allQuizzes.length} kvizova
+                            {searchTerm && <span> • Pretraga: "{searchTerm}"</span>}
+                            {selectedCategoryId && <span> • Kategorija: {categories.find(c => c.id === selectedCategoryId)?.name}</span>}
+                            {selectedOrganizerId && <span> • Organizator: {organizers.find(o => o.id === selectedOrganizerId)?.name}</span>}
+                            {(dateFrom || dateTo) && (
+                                <span> • Datum: {dateFrom || '...'} - {dateTo || '...'}</span>
+                            )}
+                        </>
                     )}
 
                     {categoriesError && (
@@ -212,18 +301,22 @@ function HomePage() {
                     <div className="text-center py-16">
                         <div className="text-gray-400 text-6xl mb-4">🔍</div>
                         <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                            Nema rezultata
+                            {hasActiveFilters ? "Nema rezultata" : "Nema kvizova"}
                         </h3>
                         <p className="text-gray-500 mb-4">
-                            Pokušaj s drugačijim pretraživanjem ili promijeni
-                            filtere.
+                            {hasActiveFilters 
+                                ? "Nema kvizova koji odgovaraju vašim filterima."
+                                : "Trenutno nema objavljenih kvizova."
+                            }
                         </p>
-                        <button
-                            onClick={clearFilters}
-                            className="text-quiz-primary hover:underline"
-                        >
-                            Obriši sve filtere
-                        </button>
+                        {hasActiveFilters && (
+                            <button
+                                onClick={clearFilters}
+                                className="text-quiz-primary hover:underline"
+                            >
+                                Obriši sve filtere
+                            </button>
+                        )}
                     </div>
                 ))}
         </main>

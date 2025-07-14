@@ -394,6 +394,7 @@ function AllQuizzesPage() {
                                         organizerName: quiz.organizerName,
                                         organizerId: quiz.organizerId,
                                         categoryName: quiz.categoryName,
+                                        categoryId: quiz.categoryId,
                                         locationName: quiz.locationName,
                                         address: quiz.address,
                                         dateTime: quiz.dateTime,
@@ -403,6 +404,7 @@ function AllQuizzesPage() {
                                         entryFee: quiz.entryFee,
                                     }}
                                     onClick={() => handleQuizClick(quiz.id)}
+                                    hideBadge={true}
                                 />
 
                                 <div className="absolute top-2 right-2 flex gap-2">

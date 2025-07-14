@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import Button from '../components/Button';
 import { CategoryService, Category } from '../services/categoryService';
 import { QuizService } from '../services/quizService';
@@ -12,7 +14,7 @@ interface CreateQuizFormData {
     locationName: string;
     address: string;
     entryFee?: number;
-    dateTime: string;
+    dateTime: Date;
     maxParticipantsPerTeam: number;
     maxTeams: number;
     durationMinutes?: number;
@@ -24,9 +26,18 @@ function CreateQuizPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
 
+    // Default datum - 7 dana unaprijed u 19:00
+    const getDefaultDateTime = (): Date => {
+        const date = new Date();
+        date.setDate(date.getDate() + 7);
+        date.setHours(19, 0, 0, 0);
+        return date;
+    };
+
     const {
         register,
         handleSubmit,
+        control,
         formState: { errors, isSubmitting },
         setValue,
         watch
@@ -34,7 +45,8 @@ function CreateQuizPage() {
         defaultValues: {
             maxParticipantsPerTeam: 4,
             maxTeams: 10,
-            durationMinutes: 120
+            durationMinutes: 120,
+            dateTime: getDefaultDateTime()
         }
     });
 
@@ -78,7 +90,7 @@ function CreateQuizPage() {
                 locationName: data.locationName,
                 address: data.address,
                 entryFee: data.entryFee || undefined,
-                dateTime: formatDateTimeForBackend(data.dateTime),
+                dateTime: data.dateTime.toISOString(),
                 maxParticipantsPerTeam: data.maxParticipantsPerTeam,
                 maxTeams: data.maxTeams,
                 durationMinutes: data.durationMinutes || undefined,
@@ -93,11 +105,6 @@ function CreateQuizPage() {
         } catch (err: any) {
             setSubmitError(err.message || 'Greška pri kreiranju kviza');
         }
-    };
-
-    const formatDateTimeForBackend = (dateTimeLocal: string): string => {
-        const date = new Date(dateTimeLocal);
-        return date.toISOString();
     };
 
     if (user && user.roleName !== 'ORGANIZER') {
@@ -249,20 +256,33 @@ function CreateQuizPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Datum i vrijeme kviza *
                             </label>
-                            <input
-                                type="datetime-local"
-                                {...register('dateTime', {
+                            <Controller
+                                name="dateTime"
+                                control={control}
+                                rules={{
                                     required: 'Datum i vrijeme su obavezni',
-                                    validate: (value) => {
-                                        const selectedDate = new Date(value);
+                                    validate: (value: Date) => {
                                         const now = new Date();
-                                        if (selectedDate <= now) {
+                                        if (value <= now) {
                                             return 'Datum i vrijeme moraju biti u budućnosti';
                                         }
                                         return true;
                                     }
-                                })}
-                                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
+                                }}
+                                render={({ field }) => (
+                                    <DatePicker
+                                        selected={field.value}
+                                        onChange={field.onChange}
+                                        showTimeSelect
+                                        timeFormat="HH:mm"
+                                        timeIntervals={30}
+                                        dateFormat="dd.MM.yyyy HH:mm"
+                                        minDate={new Date()}
+                                        timeCaption="Vrijeme"
+                                        placeholderText="Odaberite datum i vrijeme"
+                                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
+                                    />
+                                )}
                             />
                             {errors.dateTime && (
                                 <p className="text-red-500 text-sm mt-1">{errors.dateTime.message}</p>

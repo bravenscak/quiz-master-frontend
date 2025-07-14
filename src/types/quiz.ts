@@ -7,6 +7,7 @@ export interface QuizCardData {
   address: string;   
   dateTime: string; 
   categoryName: string;
+  categoryId: number;
   registeredTeamsCount: number;  
   maxTeams: number;    
   entryFee?: number;    
