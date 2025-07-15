@@ -8,15 +8,21 @@ import { CategoryService, Category } from "../services/categoryService";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "../components/Button";
+import MapWrapper from "../components/maps/MapWrapper";
+import QuizMap from "../components/maps/QuizMap";
 
 interface Organizer {
     id: number;
     name: string;
 }
 
+type ViewMode = 'cards' | 'map';
+
 function HomePage() {
     const navigate = useNavigate();
     const { user } = useAuth();
+
+    const [viewMode, setViewMode] = useState<ViewMode>('cards');
 
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -67,6 +73,7 @@ function HomePage() {
             };
 
             const data = await QuizService.getQuizzes(params);
+            
             setAllQuizzes(data);
 
             const uniqueOrganizers = Array.from(
@@ -133,6 +140,10 @@ function HomePage() {
     const hasActiveFilters = searchTerm || selectedCategoryId || selectedOrganizerId || dateFrom || dateTo;
     const today = new Date().toISOString().split('T')[0];
 
+    const toggleViewMode = () => {
+        setViewMode(prev => prev === 'cards' ? 'map' : 'cards');
+    };
+
     return (
         <main className="p-8">
             <div className="mb-8">
@@ -146,14 +157,39 @@ function HomePage() {
                         </p>
                     </div>
 
-                    {user?.roleName === "ORGANIZER" && (
-                        <Button
-                            text="+ Stvori novi kviz"
-                            onClick={() => navigate("/create-quiz")}
-                            variant="primary"
-                            className="px-6 py-3 whitespace-nowrap ml-6"
-                        />
-                    )}
+                    <div className="flex items-center gap-4">
+                        <div className="flex bg-gray-100 rounded-lg p-1">
+                            <button
+                                onClick={() => setViewMode('cards')}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                                    viewMode === 'cards'
+                                        ? 'bg-white text-quiz-primary shadow-sm'
+                                        : 'text-gray-600 hover:text-quiz-primary'
+                                }`}
+                            >
+                                📋 Lista
+                            </button>
+                            <button
+                                onClick={() => setViewMode('map')}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                                    viewMode === 'map'
+                                        ? 'bg-white text-quiz-primary shadow-sm'
+                                        : 'text-gray-600 hover:text-quiz-primary'
+                                }`}
+                            >
+                                🗺️ Karta
+                            </button>
+                        </div>
+
+                        {user?.roleName === "ORGANIZER" && (
+                            <Button
+                                text="+ Stvori novi kviz"
+                                onClick={() => navigate("/create-quiz")}
+                                variant="primary"
+                                className="px-6 py-3 whitespace-nowrap"
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -239,6 +275,9 @@ function HomePage() {
                     ) : (
                         <>
                             Prikazano {quizzes.length} od {allQuizzes.length} kvizova
+                            {viewMode === 'map' && (
+                                <span className="ml-2 text-quiz-primary">• Prikaz na karti</span>
+                            )}
                             {searchTerm && <span> • Pretraga: "{searchTerm}"</span>}
                             {selectedCategoryId && <span> • Kategorija: {categories.find(c => c.id === selectedCategoryId)?.name}</span>}
                             {selectedOrganizerId && <span> • Organizator: {organizers.find(o => o.id === selectedOrganizerId)?.name}</span>}
@@ -285,40 +324,68 @@ function HomePage() {
                 </div>
             )}
 
-            {!loading &&
-                !error &&
-                (quizzes.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {quizzes.map((quiz) => (
-                            <QuizCard
-                                key={quiz.id}
-                                quiz={quiz}
-                                onClick={handleQuizClick}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-16">
-                        <div className="text-gray-400 text-6xl mb-4">🔍</div>
-                        <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                            {hasActiveFilters ? "Nema rezultata" : "Nema kvizova"}
-                        </h3>
-                        <p className="text-gray-500 mb-4">
-                            {hasActiveFilters 
-                                ? "Nema kvizova koji odgovaraju vašim filterima."
-                                : "Trenutno nema objavljenih kvizova."
-                            }
-                        </p>
-                        {hasActiveFilters && (
-                            <button
-                                onClick={clearFilters}
-                                className="text-quiz-primary hover:underline"
-                            >
-                                Obriši sve filtere
-                            </button>
-                        )}
-                    </div>
-                ))}
+            {!loading && !error && (
+                <>
+                    {quizzes.length > 0 ? (
+                        <>
+                            {viewMode === 'cards' ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {quizzes.map((quiz) => (
+                                        <QuizCard
+                                            key={quiz.id}
+                                            quiz={quiz}
+                                            onClick={handleQuizClick}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="bg-white rounded-lg shadow-md p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold text-gray-800">
+                                            🗺️ Kvizovi na karti ({quizzes.length})
+                                        </h3>
+                                        <button
+                                            onClick={() => setViewMode('cards')}
+                                            className="text-sm text-quiz-primary hover:underline"
+                                        >
+                                            ← Povratak na listu
+                                        </button>
+                                    </div>
+                                    <MapWrapper>
+                                        <QuizMap
+                                            quizzes={quizzes}
+                                            onQuizClick={handleQuizClick}
+                                        />
+                                    </MapWrapper>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="text-center py-16">
+                            <div className="text-gray-400 text-6xl mb-4">
+                                {viewMode === 'map' ? '🗺️' : '🔍'}
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                                {hasActiveFilters ? "Nema rezultata" : "Nema kvizova"}
+                            </h3>
+                            <p className="text-gray-500 mb-4">
+                                {hasActiveFilters 
+                                    ? "Nema kvizova koji odgovaraju vašim filterima."
+                                    : "Trenutno nema objavljenih kvizova."
+                                }
+                            </p>
+                            {hasActiveFilters && (
+                                <button
+                                    onClick={clearFilters}
+                                    className="text-quiz-primary hover:underline"
+                                >
+                                    Obriši sve filtere
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
+            )}
         </main>
     );
 }

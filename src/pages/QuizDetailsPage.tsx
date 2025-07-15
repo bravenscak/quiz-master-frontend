@@ -9,6 +9,8 @@ import { TeamService, QuizTeam } from "../services/teamService";
 import { QuizDetails } from "../types/quiz";
 import { useAuth } from "../contexts/AuthContext";
 import EditTeamModal from "../components/EditTeamModal";
+import MapWrapper from "../components/maps/MapWrapper";
+import QuizLocationMap from "../components/maps/QuizLocationMap";
 
 function QuizDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -378,6 +380,7 @@ function QuizDetailsPage() {
                             </p>
                         )}
                     </div>
+
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex items-center mb-4">
                             <div className="text-quiz-primary mr-3">📍</div>
@@ -390,6 +393,26 @@ function QuizDetailsPage() {
                         </p>
                         <p className="text-gray-600">{quiz.address}</p>
                     </div>
+
+                    {quiz.latitude && quiz.longitude && (
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                            <div className="flex items-center mb-4">
+                                <div className="text-quiz-primary mr-3">🗺️</div>
+                                <h3 className="text-xl font-bold text-gray-800">
+                                    Lokacija na karti
+                                </h3>
+                            </div>
+                            <MapWrapper>
+                                <QuizLocationMap
+                                    latitude={quiz.latitude}
+                                    longitude={quiz.longitude}
+                                    locationName={quiz.locationName}
+                                    address={quiz.address}
+                                />
+                            </MapWrapper>
+                        </div>
+                    )}
+
                     {quiz.description && (
                         <div className="bg-white p-6 rounded-lg shadow-md">
                             <div className="flex items-center mb-4">

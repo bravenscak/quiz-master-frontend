@@ -6,6 +6,8 @@ import { CategoryService, Category } from "../services/categoryService";
 import { QuizService } from "../services/quizService";
 import { useAuth } from "../contexts/AuthContext";
 import { UpdateQuizRequest } from "../types/quiz";
+import MapWrapper from "../components/maps/MapWrapper";
+import LocationPicker from "../components/maps/LocationPicker";
 
 interface EditQuizFormData {
     name: string;
@@ -43,6 +45,12 @@ function EditQuizPage() {
 
     const [isDeleting, setIsDeleting] = useState(false);
 
+    const [selectedLocation, setSelectedLocation] = useState<{
+        latitude?: number;
+        longitude?: number;
+        address?: string;
+    }>({});
+
     useEffect(() => {
         if (
             user &&
@@ -59,6 +67,12 @@ function EditQuizPage() {
         try {
             const quizData = await QuizService.getQuizById(quizId);
             setQuiz(quizData);
+
+            setSelectedLocation({
+                latitude: quizData.latitude,
+                longitude: quizData.longitude,
+                address: quizData.address
+            });
 
             const quizDate = new Date(quizData.dateTime);
             const formattedDateTime = quizDate.toISOString().slice(0, 16);
@@ -130,6 +144,8 @@ function EditQuizPage() {
                 name: data.name,
                 locationName: data.locationName,
                 address: data.address,
+                latitude: selectedLocation.latitude,  
+                longitude: selectedLocation.longitude, 
                 entryFee: data.entryFee || undefined,
                 dateTime: formatDateTimeForBackend(data.dateTime),
                 maxParticipantsPerTeam: data.maxParticipantsPerTeam,
@@ -353,6 +369,10 @@ function EditQuizPage() {
                                     })}
                                     className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-quiz-primary focus:outline-none"
                                     placeholder="npr. Ilica 1, Zagreb"
+                                    value={selectedLocation.address || ""}
+                                    onChange={(e) =>
+                                        setValue("address", e.target.value)
+                                    }
                                 />
                                 {errors.address && (
                                     <p className="text-red-500 text-sm mt-1">
@@ -361,6 +381,18 @@ function EditQuizPage() {
                                 )}
                             </div>
                         </div>
+
+                        <MapWrapper>
+                            <LocationPicker
+                                onLocationSelect={(location) => {
+                                    setSelectedLocation(location);
+                                    setValue("address", location.address);
+                                }}
+                                initialAddress={watch("address")}
+                                initialLatitude={selectedLocation.latitude}
+                                initialLongitude={selectedLocation.longitude}
+                            />
+                        </MapWrapper>
                     </div>
 
                     <div className="space-y-4">

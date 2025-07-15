@@ -5,6 +5,8 @@ export interface QuizCardData {
   organizerId: number; 
   locationName: string;
   address: string;   
+  latitude?: number;      
+  longitude?: number;       
   dateTime: string; 
   categoryName: string;
   categoryId: number;
