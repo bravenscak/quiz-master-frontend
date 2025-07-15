@@ -336,6 +336,7 @@ function HomePage() {
                                             quiz={quiz}
                                             onClick={handleQuizClick}
                                         />
+                                        
                                     ))}
                                 </div>
                             ) : (

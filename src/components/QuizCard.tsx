@@ -5,6 +5,7 @@ interface QuizCardProps {
   quiz: QuizCardData;
   onClick: (quizId: number) => void;
   hideBadge?: boolean; 
+  hideStatusBadge?: boolean; 
 }
 
 const getDateBadge = (dateString: string): { text: string; color: string } | null => {
@@ -35,7 +36,34 @@ const getDateBadge = (dateString: string): { text: string; color: string } | nul
   return null;
 };
 
-function QuizCard({ quiz, onClick, hideBadge = false }: QuizCardProps) {
+const getStatusBadge = (quiz: QuizCardData): { text: string; color: string; dotColor: string } => {
+  const now = new Date();
+  const quizDate = new Date(quiz.dateTime);
+  
+  if (quizDate < now) {
+    return { 
+      text: 'Završen', 
+      color: 'bg-green-500 text-white',
+      dotColor: 'bg-green-200'
+    };
+  }
+  
+  if (quiz.registeredTeamsCount >= quiz.maxTeams) {
+    return { 
+      text: 'Popunjen', 
+      color: 'bg-red-500 text-white',
+      dotColor: 'bg-red-200'
+    };
+  }
+  
+  return { 
+    text: 'Dostupan', 
+    color: 'bg-blue-500 text-white',
+    dotColor: 'bg-blue-200'
+  };
+};
+
+function QuizCard({ quiz, onClick, hideBadge = false, hideStatusBadge = false }: QuizCardProps) {
   const handleClick = () => {
     onClick(quiz.id);
   };
@@ -51,7 +79,8 @@ function QuizCard({ quiz, onClick, hideBadge = false }: QuizCardProps) {
     });
   };
 
-  const badge = getDateBadge(quiz.dateTime);
+  const dateBadge = getDateBadge(quiz.dateTime);
+  const statusBadge = getStatusBadge(quiz);
 
   return (
     <div 
@@ -71,10 +100,19 @@ function QuizCard({ quiz, onClick, hideBadge = false }: QuizCardProps) {
         relative
       "
     >
-      {badge && !hideBadge && (
+      {dateBadge && !hideBadge && (
         <div className="absolute top-3 right-3 z-10">
-          <span className={`px-2 py-1 rounded-full text-xs font-bold ${badge.color} shadow-md`}>
-            {badge.text}
+          <span className={`px-2 py-1 rounded-full text-xs font-bold ${dateBadge.color} shadow-md`}>
+            {dateBadge.text}
+          </span>
+        </div>
+      )}
+
+      {!hideStatusBadge && (
+        <div className="absolute bottom-3 right-3 z-10">
+          <span className={`inline-flex items-center gap-1 ${statusBadge.color} text-xs px-3 py-1 rounded-full font-medium shadow-sm`}>
+            <span className={`w-1.5 h-1.5 ${statusBadge.dotColor} rounded-full ${statusBadge.text === 'Dostupan' ? 'animate-pulse' : ''}`}></span>
+            {statusBadge.text}
           </span>
         </div>
       )}

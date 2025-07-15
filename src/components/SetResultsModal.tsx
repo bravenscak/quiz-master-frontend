@@ -127,9 +127,6 @@ function SetResultsModal({ isOpen, onClose, teams, quizName, onSuccess }: SetRes
                                 <div className="font-medium text-gray-800">
                                     {result.teamName}
                                 </div>
-                                <div className="text-sm text-gray-600">
-                                    Tim #{result.teamId}
-                                </div>
                             </div>
                             
                             <div className="flex items-center gap-2">
